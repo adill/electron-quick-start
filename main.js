@@ -28,6 +28,10 @@ function createWindow () {
     // when you should delete the corresponding element.
     mainWindow = null
   })
+
+  mainWindow.webContents.on('cursor-changed', function (_event, type) {
+    console.log('cursor changed! ', type)
+  })
 }
 
 // This method will be called when Electron has finished
