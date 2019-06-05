@@ -5,6 +5,8 @@ const {app, BrowserWindow} = require('electron')
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
 
+app.disableHardwareAcceleration();
+
 function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({
