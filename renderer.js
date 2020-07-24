@@ -4,3 +4,5 @@
 // `nodeIntegration` is turned off. Use `preload.js` to
 // selectively enable features needed in the rendering
 // process.
+
+let popoutWindow = window.open('./popout.html', 'somekey', 'menubar=no,toolbar=no,location=no,directories=no');

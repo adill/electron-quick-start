@@ -2,15 +2,57 @@
 const {app, BrowserWindow} = require('electron')
 const path = require('path')
 
+app.allowRendererProcessReuse = true;
+
 function createWindow () {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      enableRemoteModule: false,
+      contextIsolation: true,
+      nodeIntegration: false,
+      // for 7.x this has to be TRUE, for 9.x it can be false and THINGS WORK
+      nodeIntegrationInSubFrames: true,
+      nativeWindowOpen: true,
     }
   })
+
+  mainWindow.webContents.on('new-window', (e, windowURL, frameName, disposition, options) => {
+    e.preventDefault();
+
+    const {width, height, x, y, webContents} = options;
+    const DEFAULT_POPOUT_OPTIONS = {
+      webPreferences: {
+        nodeIntegration: false,
+        nativeWindowOpen: true,
+        enableRemoteModule: false,
+        contextIsolation: true,
+      },
+    };
+    const newOptions = Object.assign({}, DEFAULT_POPOUT_OPTIONS, {
+      width,
+      height,
+      x,
+      y,
+      webContents,
+    });
+
+    const newWindow = (e.newGuest = new BrowserWindow(newOptions));
+    newWindow.loadURL(windowURL);
+
+    // in ELECTRON 7 I HAVE TO DO THIS
+    newWindow.webContents.on('dom-ready', () => {
+      console.log('I am calling it');
+      // WHY DOES THIS ONLY WORK WHEN nodeIntegrationInSubFrames IS TRUE?
+      // newWindow.webContents._sendInternal('ELECTRON_INTERNAL_RENDERER_WEB_FRAME_METHOD', 0, 'executeJavaScriptInIsolatedWorld', 999, [{ code: 'window.opener.aaaa = window' }]);
+    });
+
+    // in ELECTRON 9 I can do this
+    // newWindow.webContents.executeJavaScriptInIsolatedWorld(999, [{ code: 'window.opener.aaaa = window'}], true).catch(() => {});
+  });
 
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
@@ -24,7 +66,7 @@ function createWindow () {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   createWindow()
-  
+
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
